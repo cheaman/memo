@@ -4,11 +4,13 @@
 <!-- 운동타이머 메모 — 폰 앱 껍데기 (2026-10-04 · 껍데기판 1 · 29번 나만의 유튜브 껍데기와 같은 꼴)
      하는 일 : 폰에 «앱» 으로 설치되게 이름 · DSM 아이콘 · 꽉 찬 화면(manifest)을 알리고, 안에 구글 앱스 스크립트 메모 화면을 통째로 띄운다.
      이 껍데기는 공개(깃허브)라 자료도 열쇠도 없다 — 열쇠는 타이머가 만든 QR(주소 끝 #m=…)로 처음 한 번 들어와 «이 폰에만» 저장된다.
-     (#… 뒤는 깃허브 서버로 가지 않음) · 화면이 «떴음» 을 20초 안에 안 보내면 «바로 열기» 단추를 보인다. -->
+     (#… 뒤는 깃허브 서버로 가지 않음) · 화면이 «떴음» 을 20초 안에 안 보내면 «바로 열기» 단추를 보인다.
+     껍데기판 4 (2026-10-05) : 휴대폰 타이머 (목업 2_다음판_목업_휴대폰타이머.html 2판 확정) — 구글을 안 거침 · 인터넷 없이도 돎.
+       평소엔 판 + 남은 시간 + 이름만 · 빈 곳 누름 = 손잡이(칩 · 시작 · 메모|타이머) 4초 뒤 내려감 · 판 모양은 PC 운동타이머.py 판그리기 와 같은 규칙 -->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#1d1d1f">
 <meta name="referrer" content="no-referrer">
-<meta name="껍데기판" content="3">
+<meta name="껍데기판" content="4">
 <title>메모</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
@@ -16,21 +18,61 @@
 <link rel="apple-touch-icon" href="icons/apple-180.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="메모">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <style>
-  :root{--bg:#f5f5f7;--ink:#1d1d1f;--dim:#6e6e73;--c:#e8743b;--card:#fff}
-  @media (prefers-color-scheme:dark){:root{--bg:#000;--ink:#f5f5f7;--dim:#a1a1a6;--card:#1c1c1e}}
-  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif}
+  /* DSM 색 (부품 v1.0 과 같은 값) — 밝게 / 어둡게는 휴대폰 설정을 따라 저절로 */
+  :root{--bg:#f5f5f7;--ink:#1d1d1f;--dim:#6e6e73;--faint:#aeaeb2;--c:#e8743b;--c2:#fdeee5;--c-ink:#a84a1a;--card:#fff;--chip:#f0f0f2;--line:#e8e8ed;--끝숨:#f6d0d0}
+  @media (prefers-color-scheme:dark){:root{--bg:#000;--ink:#f5f5f7;--dim:#a1a1a6;--faint:#636366;--c2:#3a2a20;--c-ink:#f0955f;--card:#1c1c1e;--chip:#2c2c2e;--line:#38383a;--끝숨:#3a1015}}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:"Pretendard","Pretendard Variable",system-ui,-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;-webkit-tap-highlight-color:transparent}
+  [hidden]{display:none!important}
   iframe{position:fixed;inset:0;width:100%;height:100%;border:0;background:var(--bg)}
-  #덮개{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:var(--bg);text-align:center;padding:24px;transition:opacity .25s}
+  #덮개{position:fixed;inset:0;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:var(--bg);text-align:center;padding:24px;transition:opacity .25s}
   #덮개.걷힘{opacity:0;pointer-events:none}
   #덮개 img{width:96px;height:96px;border-radius:22.5%}
   #덮개 b{font-size:18px}
   #덮개 .곁{font-size:14px;color:var(--dim);max-width:320px;line-height:1.5}
   #막힘{display:none;flex-direction:column;gap:10px;align-items:center}
   #막힘.보임{display:flex}
-  .단추{border:0;border-radius:12px;padding:12px 20px;font-size:16px;font-weight:700;background:var(--c);color:#fff;text-decoration:none}
+  .단추{border:0;border-radius:12px;padding:12px 20px;font-size:16px;font-weight:700;background:var(--c);color:#fff;text-decoration:none;font-family:inherit;cursor:pointer}
   .단추.옅게{background:var(--card);color:var(--ink)}
   .서명{position:fixed;bottom:max(14px,env(safe-area-inset-bottom));left:0;right:0;text-align:center;font-size:13px;color:var(--dim)}
+
+  /* ── 타이머 (껍데기판 4) ── */
+  #타이머{position:fixed;inset:0;z-index:20;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;user-select:none;-webkit-user-select:none;overflow:hidden;
+    padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+  #타이머.끝남{animation:숨 1.6s ease-in-out infinite}
+  @keyframes 숨{50%{background:var(--끝숨)}}
+  #판{display:block;touch-action:none;width:min(84vw,62vh);height:min(84vw,62vh);filter:drop-shadow(0 10px 24px rgba(0,0,0,.18))}
+  .글칸{display:flex;flex-direction:column;align-items:center}
+  #남은{font-size:30px;font-weight:600;letter-spacing:.01em;color:var(--dim);margin-top:22px;font-variant-numeric:tabular-nums;line-height:1}
+  #타이머.끝남 #남은{color:#c8102e;font-weight:700;font-size:24px}
+  #이름{font-size:13px;color:var(--faint);margin-top:8px;min-height:16px;letter-spacing:.04em;text-align:center;padding:0 16px}
+  #더줄{display:flex;gap:6px;margin-top:18px}
+  #더줄 button{border:0;border-radius:12px;padding:11px 15px;font:inherit;font-size:15px;font-weight:700;background:var(--chip);color:var(--ink);cursor:pointer}
+  #더줄 button.주{background:var(--c);color:#fff}
+  /* 가로로 세워 둠 : 판 왼쪽 · 숫자 크게 오른쪽 */
+  @media (orientation:landscape) and (max-height:560px){
+    #타이머{flex-direction:row;gap:5vw}
+    #판{width:min(78vh,48vw);height:min(78vh,48vw)}
+    .글칸{align-items:flex-start}
+    #남은{font-size:min(16vh,76px);font-weight:700;color:var(--ink);margin:0;letter-spacing:-.02em}
+    #이름{text-align:left;padding:0}
+  }
+  /* 손잡이 — 빈 곳을 누를 때만 아래에서 올라옴 */
+  #손잡이{position:fixed;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));max-width:520px;margin:0 auto;background:var(--card);border-radius:22px;box-shadow:0 10px 30px rgba(0,0,0,.18);
+    padding:14px 12px 10px;transform:translateY(calc(100% + 30px));transition:transform .28s ease;z-index:2}
+  #손잡이.열림{transform:none}
+  .칩들{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+  .칩{border:0;border-radius:999px;padding:8px 13px;font:inherit;font-size:14px;font-weight:600;background:var(--chip);color:var(--ink);cursor:pointer}
+  .칩 small{font-size:13px;color:var(--dim);margin-left:3px;font-weight:500}
+  .칩.켬{background:var(--c2);color:var(--c-ink)}
+  .단추줄{display:flex;gap:8px;margin-top:12px}
+  .단추줄 button{flex:1;border:0;border-radius:12px;padding:13px;font:inherit;font-size:15px;font-weight:700;background:var(--chip);color:var(--ink);cursor:pointer}
+  .단추줄 button.주{background:var(--c);color:#fff}
+  .단추줄 button:disabled{opacity:.4}
+  .전환{display:flex;margin-top:10px;border-top:1px solid var(--line);padding-top:8px;gap:6px}
+  .전환 button{flex:1;border:0;background:none;text-align:center;font:inherit;font-size:13px;font-weight:600;color:var(--dim);padding:8px 0;border-radius:10px;cursor:pointer}
+  .전환 button.켬{color:var(--c-ink);background:var(--c2)}
 </style>
 </head>
 <body>
@@ -44,8 +86,32 @@
     <a class="단추" id="바로">바로 열기</a>
     <button class="단추 옅게" id="다시">다시 시도</button>
   </div>
-  <div class="서명">DSM · 22 운동타이머 · 메모 껍데기판 3</div>
+  <button class="단추 옅게" id="타이머로" style="margin-top:6px">◔ 타이머 (인터넷 없이도)</button>
+  <div class="서명">DSM · 22 운동타이머 · 메모 껍데기판 4</div>
 </div>
+
+<!-- 휴대폰 타이머 — 평소엔 판 + 남은 시간 + 이름만 -->
+<div id="타이머" hidden>
+  <svg id="판" viewBox="0 0 100 100" aria-label="타이머 판"></svg>
+  <div class="글칸">
+    <div id="남은">25:00</div>
+    <div id="이름">공부</div>
+    <div id="더줄" hidden><button data-더="1">+1분</button><button data-더="3">+3분</button><button data-더="5">+5분</button><button class="주" id="끝확인">끝</button></div>
+  </div>
+  <div id="손잡이">
+    <div class="칩들" id="칩들">
+      <button class="칩" data-분="25" data-이름="공부">공부<small>25</small></button>
+      <button class="칩" data-분="50" data-이름="공부">공부<small>50</small></button>
+      <button class="칩" data-분="30" data-이름="책">책<small>30</small></button>
+      <button class="칩" data-분="3" data-이름="라면">라면<small>3</small></button>
+      <button class="칩" data-분="9" data-이름="계란">계란<small>9</small></button>
+      <button class="칩" data-분="0" data-이름="">직접</button>
+    </div>
+    <div class="단추줄"><button id="다시맞춤">다시</button><button class="주" id="시작">▶ 시작</button></div>
+    <div class="전환"><button id="메모로">메모</button><button class="켬">타이머</button></div>
+  </div>
+</div>
+
 <script>
 // 구글 앱스 스크립트 메모 화면 주소 (타이머가 쓰는 배포 · «배포 관리 → 새 버전» 으로만 올리므로 안 바뀜) — 열쇠 없이는 «열 수 없습니다» 만 냄
 const 진짜주소 = 'https://script.google.com/macros/s/AKfycbzZ1_G_S0KRZoaVXpUeW3S-uq1NR30bDmkXu5vh3of3i6dDsTOvpvqibgmZCmoW1vBR/exec';
@@ -94,10 +160,11 @@ function 열기() {
   }, 기다림초 * 1000);
 }
 
-// 메모 화면이 보내는 신호 — {메모: '떴음' | '못받음'}
+// 메모 화면이 보내는 신호 — {메모: '떴음' | '못받음' | '타이머'}
 window.addEventListener('message', e => {
   const 글 = e.data && e.data.메모;
   if (!글) return;
+  if (글 === '타이머') { 화면보기('타이머'); return; }    // 메모 머리의 ◔ 단추 (스크립트 6판 · 10-05)
   떴음 = true;
   clearTimeout(시계);
   if (글 === '못받음') {                       // 열쇠가 틀림(타이머 열쇠가 바뀜 등) → 지우고 QR 다시
@@ -110,9 +177,170 @@ window.addEventListener('message', e => {
 });
 
 document.getElementById('다시').addEventListener('click', 열기);
+
+// ═════ 휴대폰 타이머 (껍데기판 4 · 2026-10-05) ═════════════════════════════════════════
+//   PC 운동타이머.py 판그리기 와 같은 판 : 12시에서 시계 반대 방향으로 남은 분만큼 빨강 · 숫자 0~55 · 가운데 흰 단추
+//   도는 동안 화면 켜 둠(Wake Lock) · 끝나면 바탕이 천천히 붉게 + 소리 · 진동 (화면을 끄거나 다른 앱으로 가면 소리를 못 낼 수 있음)
+//   상태는 기기에 («타이머») — 앱을 닫았다 열어도 이어서 셈
+const $ = id => document.getElementById(id);
+const 빨강 = '#c8102e';
+const 타 = { 남은: 25 * 60, 상태: '멈춤', 이름: '공부', 칩: '25', 끝때: 0, 깨움: null, 소리: null, 울림: null, 숨김: 0 };
+function 저장() { try { localStorage.setItem('타이머', JSON.stringify({ 남은: 타.남은, 상태: 타.상태, 이름: 타.이름, 칩: 타.칩, 끝때: 타.끝때 })); } catch (e) {} }
+try {
+  const s = JSON.parse(localStorage.getItem('타이머') || 'null');
+  if (s && typeof s.남은 === 'number') Object.assign(타, { 남은: s.남은, 상태: s.상태 === '끝' ? '멈춤' : s.상태, 이름: s.이름 || '', 칩: s.칩 || '0', 끝때: s.끝때 || 0 });
+  if (타.상태 === '도는중') 타.남은 = Math.max(0, (타.끝때 - Date.now()) / 1000);   // 닫혀 있는 동안 흐른 시간
+} catch (e) {}
+
+function 판그리기(남은초, 상태) {
+  const c = 50, R눈 = 33.4, R빨 = 30.1, R숫 = 39.6, 각 = Math.min(남은초 / 60, 60) * 6, 끝 = 상태 === '끝';
+  let h = `<rect x="0" y="0" width="100" height="100" rx="16" fill="#3a3f47"/><rect x="4" y="4" width="92" height="92" rx="12" fill="#dfe6ea"/>
+    <rect x="5.6" y="5.6" width="88.8" height="88.8" rx="10" fill="${끝 ? '#f8d3d3' : '#f4f2ed'}"/>`;
+  if (각 >= 359.9) h += `<circle cx="${c}" cy="${c}" r="${R빨}" fill="${빨강}"/>`;
+  else if (각 > 0.05) {
+    const t = 각 * Math.PI / 180, x = c - R빨 * Math.sin(t), y = c - R빨 * Math.cos(t);
+    h += `<path d="M${c} ${c} L${c} ${c - R빨} A${R빨} ${R빨} 0 ${각 > 180 ? 1 : 0} 0 ${x.toFixed(2)} ${y.toFixed(2)} Z" fill="${빨강}"/>`;
+  }
+  for (let m = 0; m < 60; m++) {
+    const t = m * 6 * Math.PI / 180, sx = -Math.sin(t), sy = -Math.cos(t), 굵 = m % 5 === 0, L = 굵 ? 4.1 : 2.1;
+    h += `<line x1="${(c + sx * R눈).toFixed(2)}" y1="${(c + sy * R눈).toFixed(2)}" x2="${(c + sx * (R눈 - L)).toFixed(2)}" y2="${(c + sy * (R눈 - L)).toFixed(2)}" stroke="#1f1f1f" stroke-width="${굵 ? .86 : .44}"/>`;
+    if (굵) h += `<text x="${(c + sx * R숫).toFixed(2)}" y="${(c + sy * R숫).toFixed(2)}" font-size="6.6" font-weight="700" fill="#1d1d1d" text-anchor="middle" dominant-baseline="central" font-family="Segoe UI,Roboto,Arial,sans-serif">${m}</text>`;
+  }
+  const t = 각 * Math.PI / 180, ex = c - Math.sin(t) * 10.9, ey = c - Math.cos(t) * 10.9;
+  h += `<line x1="${c}" y1="${c}" x2="${ex.toFixed(2)}" y2="${ey.toFixed(2)}" stroke="#c9c9c9" stroke-width="3" stroke-linecap="round"/>
+    <line x1="${c}" y1="${c}" x2="${ex.toFixed(2)}" y2="${ey.toFixed(2)}" stroke="#fbfbf9" stroke-width="2.1" stroke-linecap="round"/>
+    <circle cx="${c + .5}" cy="${c + .8}" r="6.5" fill="#b9b6b0"/><circle cx="${c}" cy="${c}" r="6.5" fill="#fbfbf9" stroke="#d6d4cf" stroke-width=".35" data-단추="1"/>`;
+  if (상태 === '멈춤') h += `<path d="M${c - 1.8} ${c - 2.3} L${c - 1.8} ${c + 2.3} L${c + 2.5} ${c} Z" fill="#4a4f57" pointer-events="none"/>`;
+  else if (상태 === '도는중') h += `<rect x="${c - 2}" y="${c - 2.2}" width="1.3" height="4.4" fill="#4a4f57" pointer-events="none"/><rect x="${c + .7}" y="${c - 2.2}" width="1.3" height="4.4" fill="#4a4f57" pointer-events="none"/>`;
+  else if (끝) h += `<circle cx="${c}" cy="${c}" r="2.7" fill="${빨강}" pointer-events="none"/>`;
+  $('판').innerHTML = h;
+}
+const 시각글 = s => { s = Math.max(0, Math.ceil(s)); return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`; };
+function 보이기() {
+  판그리기(타.남은, 타.상태);
+  const 끝 = 타.상태 === '끝';
+  $('남은').textContent = 끝 ? `${타.이름 ? 타.이름 + ' ' : ''}끝` : 시각글(타.남은);
+  $('이름').textContent = 끝 ? '' : 타.상태 === '멈춤' && 타.남은 > 0 ? `${타.이름 || '직접'} · 가운데를 누르면 시작`
+    : 타.남은 <= 0 ? '판을 돌려 시간을 정함' : (타.이름 || '');
+  $('더줄').hidden = !끝;
+  $('타이머').classList.toggle('끝남', 끝);
+  $('시작').textContent = 타.상태 === '도는중' ? '❚❚ 멈춤' : '▶ 시작';
+  $('시작').disabled = 타.상태 !== '도는중' && 타.남은 <= 0;
+  document.querySelectorAll('#칩들 .칩').forEach(b => b.classList.toggle('켬', b.dataset.분 === 타.칩));
+}
+
+// -- 화면 켜 둠 · 소리 · 진동 --
+async function 화면켜둠(켬) {
+  try {
+    if (켬 && !타.깨움 && navigator.wakeLock) { 타.깨움 = await navigator.wakeLock.request('screen'); 타.깨움.addEventListener('release', () => { 타.깨움 = null; }); }
+    if (!켬 && 타.깨움) { await 타.깨움.release(); 타.깨움 = null; }
+  } catch (e) { /* 안 되는 기기면 그만 */ }
+}
+function 소리준비() {                          // 누름(손가락) 안에서 만들어 둬야 나중에 소리가 남 (브라우저 규칙)
+  try { if (!타.소리) 타.소리 = new (window.AudioContext || window.webkitAudioContext)(); if (타.소리.state === 'suspended') 타.소리.resume(); } catch (e) {}
+}
+function 삐() {
+  const a = 타.소리; if (!a) return;
+  [0, .35, .7].forEach(t => { const o = a.createOscillator(), g = a.createGain(); o.type = 'sine'; o.frequency.value = 880;
+    g.gain.setValueAtTime(.0001, a.currentTime + t); g.gain.exponentialRampToValueAtTime(.25, a.currentTime + t + .02); g.gain.exponentialRampToValueAtTime(.0001, a.currentTime + t + .25);
+    o.connect(g); g.connect(a.destination); o.start(a.currentTime + t); o.stop(a.currentTime + t + .3); });
+  try { navigator.vibrate && navigator.vibrate([400, 150, 400, 150, 400]); } catch (e) {}
+}
+function 울림멈춤() { clearInterval(타.울림); 타.울림 = null; try { navigator.vibrate && navigator.vibrate(0); } catch (e) {} }
+function 끝내기() {
+  타.상태 = '끝'; 타.남은 = 0; 저장(); 보이기(); 화면보기('타이머');
+  삐(); 울림멈춤();
+  let 몇 = 0; 타.울림 = setInterval(() => { if (++몇 >= 30) 울림멈춤(); else 삐(); }, 2000);   // 2초마다 · 1분까지 · 아무 데나 누르면 멈춤
+  화면켜둠(true); setTimeout(() => { if (타.상태 === '끝') 화면켜둠(false); }, 70000);
+}
+
+// -- 시작 · 멈춤 · 맞추기 --
+function 시작멈춤() {
+  소리준비();
+  if (타.상태 === '도는중') { 타.남은 = Math.max(0, (타.끝때 - Date.now()) / 1000); 타.상태 = '멈춤'; 화면켜둠(false); }
+  else if (타.남은 > 0) { 타.상태 = '도는중'; 타.끝때 = Date.now() + 타.남은 * 1000; 화면켜둠(true); 손잡이(false); }
+  저장(); 보이기();
+}
+function 맞추기(초, 이름, 칩) {
+  울림멈춤(); 타.남은 = 초; 타.이름 = 이름; 타.칩 = 칩;
+  if (타.상태 === '도는중') 타.끝때 = Date.now() + 초 * 1000;      // 도는 중에 맞추면 그대로 돎 (책상 타임타이머처럼)
+  else { 타.상태 = '멈춤'; 화면켜둠(false); }
+  저장(); 보이기();
+}
+setInterval(() => {
+  if (타.상태 !== '도는중') return;
+  타.남은 = Math.max(0, (타.끝때 - Date.now()) / 1000);
+  if (타.남은 <= 0) 끝내기(); else 보이기();
+}, 250);
+
+// 판 끌어 맞추기 (12시 = 0 · 시계 반대 방향으로 늘어남 · 1분 단위) · 가운데 흰 단추 = 시작/멈춤
+let 끄는중 = false, 끈적 = false;
+function 끌어맞춤(e) {
+  const r = $('판').getBoundingClientRect(), x = e.clientX - (r.left + r.width / 2), y = e.clientY - (r.top + r.height / 2);
+  let 각 = Math.atan2(-x, -y) * 180 / Math.PI; if (각 < 0) 각 += 360;
+  let 분 = Math.round(각 / 6); if (분 === 0 && 타.남은 > 30 * 60) 분 = 60;
+  맞추기(분 * 60, '', '0');
+}
+$('판').addEventListener('pointerdown', e => {
+  e.stopPropagation(); 소리준비();
+  if (타.상태 === '끝') { 울림멈춤(); return; }
+  if (e.target.dataset && e.target.dataset.단추) { 시작멈춤(); return; }
+  끄는중 = true; 끈적 = false;
+  try { $('판').setPointerCapture(e.pointerId); } catch (e2) {}
+});
+$('판').addEventListener('pointermove', e => { if (끄는중) { 끈적 = true; 끌어맞춤(e); } });
+$('판').addEventListener('pointerup', e => { if (끄는중 && !끈적) 끌어맞춤(e); 끄는중 = false; });
+
+// 손잡이 — 빈 곳 누름 = 열고 닫기 · 4초 손 안 대면 내려감
+function 손잡이(열기) {
+  clearTimeout(타.숨김);
+  $('손잡이').classList.toggle('열림', 열기);
+  if (열기) 타.숨김 = setTimeout(() => $('손잡이').classList.remove('열림'), 4000);
+}
+$('타이머').addEventListener('pointerdown', e => {
+  if (e.target.closest('#손잡이')) { 손잡이(true); return; }
+  if (e.target.closest('#더줄')) return;
+  if (타.상태 === '끝') { 울림멈춤(); return; }
+  손잡이(!$('손잡이').classList.contains('열림'));
+});
+$('칩들').addEventListener('click', e => {
+  const b = e.target.closest('[data-분]'); if (!b) return;
+  if (+b.dataset.분) 맞추기(+b.dataset.분 * 60, b.dataset.이름, b.dataset.분);
+  else { 타.칩 = '0'; 타.이름 = ''; 보이기(); }
+});
+$('시작').addEventListener('click', 시작멈춤);
+$('다시맞춤').addEventListener('click', () => {
+  const 칩 = document.querySelector(`#칩들 .칩[data-분="${타.칩}"]`);
+  타.상태 = '멈춤'; 화면켜둠(false); 맞추기((+타.칩 || 25) * 60, 칩 ? 칩.dataset.이름 : 타.이름, 타.칩 === '0' ? '25' : 타.칩);
+});
+$('더줄').addEventListener('click', e => {
+  const b = e.target.closest('[data-더]'); if (!b) return;
+  울림멈춤(); 타.남은 = +b.dataset.더 * 60; 타.상태 = '멈춤'; 시작멈춤();       // n분 더 → 곧바로 다시 돎
+});
+$('끝확인').addEventListener('click', () => { 울림멈춤(); 화면켜둠(false); 타.상태 = '멈춤'; 타.남은 = 0; 저장(); 보이기(); 손잡이(true); });
+
+// -- 메모 ↔ 타이머 --
+function 화면보기(무엇) {
+  $('타이머').hidden = 무엇 !== '타이머';
+  try { localStorage.setItem('마지막화면', 무엇); } catch (e) {}
+  if (무엇 === '타이머') 보이기();
+}
+$('메모로').addEventListener('click', () => { 손잡이(false); 화면보기('메모'); });
+$('타이머로').addEventListener('click', () => 화면보기('타이머'));
+document.addEventListener('visibilitychange', () => {        // 돌아오면 : 흐른 시간 다시 셈 · 화면 켜 둠 다시 (안드로이드는 숨으면 풀림)
+  if (document.visibilityState !== 'visible') return;
+  if (타.상태 === '도는중') { 타.남은 = Math.max(0, (타.끝때 - Date.now()) / 1000); if (타.남은 <= 0) 끝내기(); else { 화면켜둠(true); 보이기(); } }
+});
+
+let 처음 = '메모';
+try { 처음 = localStorage.getItem('마지막화면') || '메모'; } catch (e) {}
+if (타.상태 === '도는중') 처음 = '타이머';
+if (new URLSearchParams(location.search).get('보기') === '타이머') 처음 = '타이머';   // 바로가기 · 시험용
+화면보기(처음);
+if (타.상태 === '도는중' && 타.남은 <= 0) 끝내기();
 열기();
 
-// 설치(앱) 조건을 맞추려는 작은 일꾼 — 아무것도 담아 두지 않음 (sw.js)
+// 껍데기 일꾼 — 인터넷에서 먼저 받고, 안 되면 담아 둔 것 (껍데기판 4 · 타이머를 인터넷 없이도 열게)
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 </script>
 </body></html>
