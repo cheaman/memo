@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ko"><head>
+<meta charset="utf-8">
+<!-- 운동타이머 메모 — 폰 앱 껍데기 (2026-10-04 · 껍데기판 1 · 29번 나만의 유튜브 껍데기와 같은 꼴)
+     하는 일 : 폰에 «앱» 으로 설치되게 이름 · DSM 아이콘 · 꽉 찬 화면(manifest)을 알리고, 안에 구글 앱스 스크립트 메모 화면을 통째로 띄운다.
+     이 껍데기는 공개(깃허브)라 자료도 열쇠도 없다 — 열쇠는 타이머가 만든 QR(주소 끝 #m=…)로 처음 한 번 들어와 «이 폰에만» 저장된다.
+     (#… 뒤는 깃허브 서버로 가지 않음) · 화면이 «떴음» 을 20초 안에 안 보내면 «바로 열기» 단추를 보인다. -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1d1d1f">
+<meta name="referrer" content="no-referrer">
+<meta name="껍데기판" content="1">
+<title>메모</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/dsm-d-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/dsm-192.png">
+<link rel="apple-touch-icon" href="icons/dsm-180-apple.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="메모">
+<style>
+  :root{--bg:#f5f5f7;--ink:#1d1d1f;--dim:#6e6e73;--c:#e8743b;--card:#fff}
+  @media (prefers-color-scheme:dark){:root{--bg:#000;--ink:#f5f5f7;--dim:#a1a1a6;--card:#1c1c1e}}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif}
+  iframe{position:fixed;inset:0;width:100%;height:100%;border:0;background:var(--bg)}
+  #덮개{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:var(--bg);text-align:center;padding:24px;transition:opacity .25s}
+  #덮개.걷힘{opacity:0;pointer-events:none}
+  #덮개 img{width:96px;height:96px;border-radius:22.5%}
+  #덮개 b{font-size:18px}
+  #덮개 .곁{font-size:14px;color:var(--dim);max-width:320px;line-height:1.5}
+  #막힘{display:none;flex-direction:column;gap:10px;align-items:center}
+  #막힘.보임{display:flex}
+  .단추{border:0;border-radius:12px;padding:12px 20px;font-size:16px;font-weight:700;background:var(--c);color:#fff;text-decoration:none}
+  .단추.옅게{background:var(--card);color:var(--ink)}
+  .서명{position:fixed;bottom:max(14px,env(safe-area-inset-bottom));left:0;right:0;text-align:center;font-size:13px;color:var(--dim)}
+</style>
+</head>
+<body>
+<iframe id="앱" title="메모" allow="clipboard-write" referrerpolicy="no-referrer"></iframe>
+<div id="덮개">
+  <img src="icons/dsm-192.png" alt="">
+  <b>메모</b>
+  <div class="곁" id="말">여는 중…</div>
+  <div id="막힘">
+    <div class="곁" id="막힘말">이 안에서 화면이 안 뜸 → 아래 «바로 열기» (위에 얇은 주소 줄이 생김)</div>
+    <a class="단추" id="바로">바로 열기</a>
+    <button class="단추 옅게" id="다시">다시 시도</button>
+  </div>
+  <div class="서명">DSM · 22 운동타이머 · 메모 껍데기판 1</div>
+</div>
+<script>
+// 구글 앱스 스크립트 메모 화면 주소 (타이머가 쓰는 배포 · «배포 관리 → 새 버전» 으로만 올리므로 안 바뀜) — 열쇠 없이는 «열 수 없습니다» 만 냄
+const 진짜주소 = 'https://script.google.com/macros/s/AKfycbzZ1_G_S0KRZoaVXpUeW3S-uq1NR30bDmkXu5vh3of3i6dDsTOvpvqibgmZCmoW1vBR/exec';
+// 시험용 — 이 PC(file · localhost)에서만 ?화면=주소 로 시험 화면을 끼움. 깃허브에서는 늘 진짜 주소
+const 이PC = location.protocol === 'file:' || /^(localhost|127\.0\.0\.1)$/.test(location.hostname);
+const 화면주소 = (이PC && new URLSearchParams(location.search).get('화면')) || 진짜주소;
+const 기다림초 = 20;
+const 열쇠칸 = '메모열쇠';
+
+// ① QR 로 처음 열면 주소 끝 #m=열쇠 → 이 폰에만 저장하고 주소에서 지움 (홈 화면 아이콘은 열쇠 없는 주소로 만들어짐)
+(function 열쇠받기() {
+  const m = new URLSearchParams(location.hash.slice(1)).get('m');
+  if (!m) return;
+  try { localStorage.setItem(열쇠칸, m); } catch (e) {}
+  history.replaceState(null, '', location.pathname + location.search);
+})();
+function 열쇠() { try { return localStorage.getItem(열쇠칸) || ''; } catch (e) { return ''; } }
+
+const 앱 = document.getElementById('앱'), 덮개 = document.getElementById('덮개');
+let 떴음 = false, 시계 = null;
+
+function 막힘(말, 보일단추 = true) {
+  document.getElementById('막힘말').textContent = 말;
+  document.getElementById('바로').style.display = 보일단추 ? '' : 'none';
+  document.getElementById('막힘').classList.add('보임');
+}
+function 열기() {
+  떴음 = false;
+  덮개.classList.remove('걷힘');
+  document.getElementById('막힘').classList.remove('보임');
+  const k = 열쇠();
+  if (!k) {                                   // 열쇠가 아직 없음 → QR 부터
+    document.getElementById('말').textContent = '처음 한 번은 타이머가 만든 QR 로 여십시오';
+    막힘('PC 운동 타이머 → 휴대폰 메모 QR → 휴대폰 카메라로 찍기', false);
+    return;
+  }
+  const 주소 = 화면주소 + (화면주소.includes('?') ? '&' : '?') + 'm=' + encodeURIComponent(k);
+  document.getElementById('바로').href = 주소;
+  document.getElementById('말').textContent = '여는 중…';
+  앱.src = 주소;
+  clearTimeout(시계);
+  시계 = setTimeout(() => {
+    if (떴음) return;
+    document.getElementById('말').textContent = 기다림초 + '초 기다려도 안 뜸';
+    막힘('이 안에서 화면이 안 뜸 → 아래 «바로 열기» (위에 얇은 주소 줄이 생김)');
+  }, 기다림초 * 1000);
+}
+
+// 메모 화면이 보내는 신호 — {메모: '떴음' | '못받음'}
+window.addEventListener('message', e => {
+  const 글 = e.data && e.data.메모;
+  if (!글) return;
+  떴음 = true;
+  clearTimeout(시계);
+  if (글 === '못받음') {                       // 열쇠가 틀림(타이머 열쇠가 바뀜 등) → 지우고 QR 다시
+    try { localStorage.removeItem(열쇠칸); } catch (e2) {}
+    document.getElementById('말').textContent = '열쇠가 맞지 않습니다';
+    막힘('PC 운동 타이머 → 휴대폰 메모 QR 을 다시 찍어 주십시오', false);
+    return;
+  }
+  덮개.classList.add('걷힘');
+});
+
+document.getElementById('다시').addEventListener('click', 열기);
+열기();
+
+// 설치(앱) 조건을 맞추려는 작은 일꾼 — 아무것도 담아 두지 않음 (sw.js)
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+</script>
+</body></html>
