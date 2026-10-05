@@ -10,7 +10,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#1d1d1f">
 <meta name="referrer" content="no-referrer">
-<meta name="껍데기판" content="4">
+<meta name="껍데기판" content="5">
 <title>메모</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
@@ -87,7 +87,7 @@
     <button class="단추 옅게" id="다시">다시 시도</button>
   </div>
   <button class="단추 옅게" id="타이머로" style="margin-top:6px">◔ 타이머 (인터넷 없이도)</button>
-  <div class="서명">DSM · 22 운동타이머 · 메모 껍데기판 4</div>
+  <div class="서명">DSM · 22 운동타이머 · 메모 껍데기판 5</div>
 </div>
 
 <!-- 휴대폰 타이머 — 평소엔 판 + 남은 시간 + 이름만 -->
@@ -102,6 +102,7 @@
     <div class="칩들" id="칩들">
       <button class="칩" data-분="25" data-이름="공부">공부<small>25</small></button>
       <button class="칩" data-분="50" data-이름="공부">공부<small>50</small></button>
+      <button class="칩" data-분="60" data-이름="60분">60분</button>
       <button class="칩" data-분="30" data-이름="책">책<small>30</small></button>
       <button class="칩" data-분="3" data-이름="라면">라면<small>3</small></button>
       <button class="칩" data-분="9" data-이름="계란">계란<small>9</small></button>
@@ -184,7 +185,7 @@ document.getElementById('다시').addEventListener('click', 열기);
 //   상태는 기기에 («타이머») — 앱을 닫았다 열어도 이어서 셈
 const $ = id => document.getElementById(id);
 const 빨강 = '#c8102e';
-const 타 = { 남은: 25 * 60, 상태: '멈춤', 이름: '공부', 칩: '25', 끝때: 0, 깨움: null, 소리: null, 울림: null, 숨김: 0 };
+const 타 = { 남은: 25 * 60, 상태: '멈춤', 이름: '공부', 칩: '25', 끝때: 0, 깨움: null, 소리: null, 울림: null, 숨김: 0, 켜둠막힘: false };
 function 저장() { try { localStorage.setItem('타이머', JSON.stringify({ 남은: 타.남은, 상태: 타.상태, 이름: 타.이름, 칩: 타.칩, 끝때: 타.끝때 })); } catch (e) {} }
 try {
   const s = JSON.parse(localStorage.getItem('타이머') || 'null');
@@ -221,7 +222,8 @@ function 보이기() {
   const 끝 = 타.상태 === '끝';
   $('남은').textContent = 끝 ? `${타.이름 ? 타.이름 + ' ' : ''}끝` : 시각글(타.남은);
   $('이름').textContent = 끝 ? '' : 타.상태 === '멈춤' && 타.남은 > 0 ? `${타.이름 || '직접'} · 가운데를 누르면 시작`
-    : 타.남은 <= 0 ? '판을 돌려 시간을 정함' : (타.이름 || '');
+    : 타.남은 <= 0 ? '판을 돌려 시간을 정함'
+    : 타.켜둠막힘 && 타.상태 === '도는중' ? `${타.이름 ? 타.이름 + ' · ' : ''}화면 켜 둠 안 됨 → 절전 모드면 꺼질 수 있음` : (타.이름 || '');
   $('더줄').hidden = !끝;
   $('타이머').classList.toggle('끝남', 끝);
   $('시작').textContent = 타.상태 === '도는중' ? '❚❚ 멈춤' : '▶ 시작';
@@ -232,9 +234,14 @@ function 보이기() {
 // -- 화면 켜 둠 · 소리 · 진동 --
 async function 화면켜둠(켬) {
   try {
-    if (켬 && !타.깨움 && navigator.wakeLock) { 타.깨움 = await navigator.wakeLock.request('screen'); 타.깨움.addEventListener('release', () => { 타.깨움 = null; }); }
+    if (켬 && !타.깨움) {
+      if (!navigator.wakeLock) throw new Error('없음');
+      타.깨움 = await navigator.wakeLock.request('screen'); 타.깨움.addEventListener('release', () => { 타.깨움 = null; });
+    }
     if (!켬 && 타.깨움) { await 타.깨움.release(); 타.깨움 = null; }
-  } catch (e) { /* 안 되는 기기면 그만 */ }
+    타.켜둠막힘 = false;
+  } catch (e) { 타.켜둠막힘 = 켬; }                  // 절전 모드 · 낡은 브라우저 → 막힘 (판 아래 한 줄로 알림)
+  보이기();
 }
 function 소리준비() {                          // 누름(손가락) 안에서 만들어 둬야 나중에 소리가 남 (브라우저 규칙)
   try { if (!타.소리) 타.소리 = new (window.AudioContext || window.webkitAudioContext)(); if (타.소리.state === 'suspended') 타.소리.resume(); } catch (e) {}
