@@ -2,7 +2,7 @@
 // 껍데기판 1~3 : 아무것도 담아 두지 않음 (담아 두면 껍데기를 고쳐도 폰에 옛것이 남음 — 34번에서 겪음)
 // 껍데기판 4 (2026-10-05) : 타이머를 인터넷 없이도 열게 «인터넷에서 먼저 받고, 안 되면 담아 둔 것»
 //   → 인터넷이 되면 늘 새것 (옛것이 남지 않음) · 껍데기 파일(같은 주소)만 담고 구글 메모 화면은 손대지 않음
-const 칸 = '메모껍데기-5';
+const 칸 = '메모껍데기-6';
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', e => e.waitUntil((async () => {
   for (const k of await caches.keys()) if (k !== 칸) await caches.delete(k);   // 옛 판 담음 지움
